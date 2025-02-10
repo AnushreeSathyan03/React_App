@@ -1,0 +1,80 @@
+<<<<<<< HEAD
+pipeline {
+    agent any
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git url: 'https://github.com/AnushreeSathyan03/ReactApplication.git', branch: 'main'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('Linting') {
+            steps {
+                sh 'npx eslint . --ext .js,.jsx'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh 'npm test'
+            }
+        }
+
+        stage('Build Project') {
+            steps {
+                sh 'npm run build'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'mkdir -p /var/www/react-app'
+                sh 'cp -r build/* /var/www/react-app/'
+            }
+        }
+
+        stage('Post-Deployment Testing') {
+            steps {
+                sh 'curl -Is http://localhost | head -n 1'
+=======
+pipeline{
+    agent any
+    
+    stages{
+        stage("Git Checkout"){
+            steps{
+                git url:"https://github.com/javahometech/reactjs-app",branch:"main"
+            }
+        }
+        stage("Docker Build"){
+            steps{
+                sh "docker build -t kammana/react-app:${currentBuild.number} ."
+            }
+        }
+        stage("Docker Push"){
+            steps{
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'docker_password', usernameVariable: 'docker_user')]) {
+                    sh "docker login -u ${docker_user} -p ${docker_password}"
+                }
+                sh "docker push kammana/react-app:${currentBuild.number}"
+            }
+        }
+        stage("Dev Deploy"){
+            steps{
+                sshagent(['docker-dev']) {
+        
+                    sh "ssh -o StrictHostKeyChecking=no ec2-user@172.31.15.57 docker rm -f react 2>/dev/null "
+                    sh "ssh ec2-user@172.31.15.57 docker run -d -p 80:80 --name=react kammana/react-app:${currentBuild.number}"
+                }
+>>>>>>> 51a5198 (Removed React_Application folder from repository)
+            }
+        }
+    }
+}
